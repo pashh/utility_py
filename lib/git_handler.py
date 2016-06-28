@@ -10,11 +10,12 @@ upload a git shallow workcopy
 """
 
 class WorkCopy():
-    def __init__(self, app, branch, wc_path):
-        self.app = app
+    def __init__(self, app, rep, branch, wc_path, rep_type):
+        self.app=app
+        self.repository=rep
         self.branch = branch
         self.wc_path=wc_path
-        self.repository="ssh://gerrit/%s" % (app)
+        self.rep_type=rep_type
         self.work_dir="%s/%s" %(wc_path, app)
         self.load_wc()
        
@@ -24,8 +25,11 @@ class WorkCopy():
             self.__exec_git__("clean -fd", self.work_dir)
             self.__exec_git__("checkout %s" % (self.branch), self.work_dir)
             self.__exec_git__("pull --rebase origin %s" % (self.branch), self.work_dir)        
-        else:
+        elif self.rep_type=="shallow":
             self.__exec_git__("clone --single-branch --depth 1 --branch %s %s" %(self.branch, self.repository), self.wc_path)
+        else:
+            self.__exec_git__("clone --branch %s %s" %(self.branch, self.repository), self.wc_path)
+            
 
             
     def delete_wc(self):
@@ -33,10 +37,19 @@ class WorkCopy():
         proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         output = proc.stdout.read()
         proc.wait()
+
+
+    def mergesquash(self, rbranch):
+        print(rbranch)
+        self.__exec_git__("checkout %s" %(rbranch), self.work_dir)
+        self.__exec_git__("checkout %s" %(self.branch), self.work_dir)
+        self.__exec_git__("merge --squash %s" %(rbranch), self.work_dir)
+          
         
     def __exec_git__(self, cmd, path):
         try:
             cmd="git %s" %(cmd)
+            print(cmd)
             proc = subprocess.Popen(cmd, cwd=r'%s'%(path), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             output, error = proc.communicate()
             if proc.returncode:
@@ -51,6 +64,8 @@ class WorkCopy():
             return True
         else:
             return False
+
+    
         
             
 if __name__ == '__main__':

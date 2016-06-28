@@ -12,7 +12,6 @@ import sys
 import os
 import time, datetime
 import paramiko
-
 import yaml
 import subprocess
 
@@ -23,10 +22,7 @@ __config__ = os.path.join(__directory__, 'config')
 __lib__ = os.path.join(__directory__, 'lib')
 sys.path.append(__lib__)
 
-from shallow_wc import WorkCopy
-#from git import GitCmd
-
-
+from git_handler import WorkCopy
 
 
 if __name__ == '__main__':
@@ -40,13 +36,10 @@ if __name__ == '__main__':
         print >> sys.stderr, "At least one required option is missing"
         sys.exit(1)
 
-    gitclone={}    
+    repository_list={}    
     with open(os.path.join(__config__, "git_projects.yaml")) as git_progects:
         projects = yaml.load(git_progects.read())
-
     for (key, val)  in projects.items():
-        gitclone[key]=val
-
-    print(gitclone["tools"])
-        
-#    wc=workcopy(projects.app, "ci-release/%s" %(options.release), "./wc")
+        repository_list[key]=val
+    wc=WorkCopy(options.app, repository_list[options.app], options.lbranch, "./wc", "regular")
+    wc.mergesquash(options.rbranch)
